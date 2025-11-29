@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Model files (too large for GitHub)
+lora_trained_model/
+lora_trained_model 2/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.zip
+
+# Data directories
+data/
+lora_training_data/
+lora_output/
+
+# Generated images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+!README*.png
+!example*.png
+
+# Logs
+*.log
+*.txt
+!requirements.txt
+!README.txt
+
+# CSV files (can be large)
+*.csv
+!requirements.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Streamlit
+.streamlit/
+
+# Checkpoints
+checkpoint-*/
+final/
+
