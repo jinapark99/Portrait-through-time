@@ -26,10 +26,11 @@ lora_trained_model 2/
 *.bin
 *.zip
 
-# Data directories (keep emotion labels tracked)
+# Data directories (keep emotion labels + matcher module tracked)
 data/*
 !data/labels/
 !data/labels/**
+!data/era_emotion_matcher.py
 lora_training_data/
 lora_output/
 
