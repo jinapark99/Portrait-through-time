@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portrait Through Time</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="brand">
+      <p class="brand-mark">Portrait Through Time</p>
+      <h1>See your face through an era that fits your expression.</h1>
+      <p class="lede">Upload a selfie. We read emotion, match a museum-style era, then paint you with img2img + era prompt.</p>
+    </header>
+
+    <section class="workspace" aria-label="Portrait studio">
+      <form id="upload-form" class="panel">
+        <label class="drop" id="drop-zone" for="file-input">
+          <input id="file-input" name="file" type="file" accept="image/*" required />
+          <span class="drop-title">Drop a selfie</span>
+          <span class="drop-hint">or click to choose · JPG/PNG</span>
+          <img id="preview" alt="" hidden />
+        </label>
+        <div class="actions">
+          <button type="button" id="btn-match" class="ghost">Match only</button>
+          <button type="submit" id="btn-generate" class="primary">Create portrait</button>
+        </div>
+        <p id="status" class="status" role="status"></p>
+      </form>
+
+      <aside class="panel result" id="result-panel" hidden>
+        <div class="meta">
+          <p><span class="k">Emotion</span> <strong id="out-emotion">—</strong></p>
+          <p><span class="k">Era</span> <strong id="out-era">—</strong></p>
+          <p class="why" id="out-why"></p>
+          <p class="mode" id="out-mode"></p>
+        </div>
+        <figure class="portrait-frame">
+          <img id="out-image" alt="Generated portrait" />
+          <figcaption id="out-caption"></figcaption>
+        </figure>
+        <a id="download-link" class="download" download="portrait.png" hidden>Download PNG</a>
+      </aside>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

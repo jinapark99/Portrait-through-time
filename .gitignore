@@ -42,6 +42,11 @@ lora_output/
 *.webp
 !README*.png
 !example*.png
+!test_*.jpg
+!test_*.png
+!outputs/
+!outputs/**
+!app/static/**
 
 # Logs
 *.log

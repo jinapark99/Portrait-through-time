@@ -29,15 +29,60 @@ A machine learning project that transforms selfies into artistic portraits using
 
 ## 🛠️ Technical Stack
 
-- **Frontend**: Streamlit
-- **AI Models**: Stable Diffusion + LoRA
-- **Face Detection**: MediaPipe
-- **Emotion Analysis**: Custom facial landmark analysis
-- **GPU**: M1 Metal Performance Shaders
+- **Web MVP**: FastAPI + static HTML/JS (`app/`)
+- **Matching**: DeepFace emotion → `data/era_emotion_matcher.py` (era × emotion catalog)
+- **Generation (D1)**: SD1.5 img2img + era prompt + optional style LoRA; IP-Adapter FaceID stubbed unless extras are installed
+- **Legacy UI**: Streamlit (`streamlit_portrait_web.py`) — local fallback only
+- **GPU**: Apple Silicon MPS / CUDA / CPU
+
+## Web MVP — run locally
+
+```bash
+cd /path/to/Portrait
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# From repo root:
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+# open http://127.0.0.1:8000
+```
+
+### API
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/health` | Device, catalog size, FaceID / LoRA status |
+| `POST` | `/match` | Upload selfie → JSON emotion + era + why + refs |
+| `POST` | `/generate` | Upload selfie → PNG (headers carry era/emotion) |
+| `POST` | `/generate/json` | Match + generate → JSON with base64 PNG + meta |
+
+### Smoke test (no server)
+
+```bash
+python scripts/smoke_web_mvp.py --image test_happy_face.jpg --steps 16
+# Match only:
+python scripts/smoke_web_mvp.py --match-only --image test_sad_face.jpg
+```
+
+Env knobs: `PORTRAIT_BASE_MODEL`, `PORTRAIT_LORA_PATH`, `PORTRAIT_DISABLE_FACEID=1`.
+
+**What works today:** match UI + DeepFace; img2img generation on MPS when SD1.5 + (optional) `lora_trained_model/final` are available. FaceID is flagged stubbed until `insightface` + IP-Adapter FaceID weights are installed.
+
+**What’s left for public deploy:** GPU worker (or HF Space GPU), model bake into image / volume, FaceID wiring, and hosting secrets. Do not expect a free Railway/Fly CPU dyno to run SD1.5 comfortably.
+
+## Suggested deploy
+
+| Target | Fit | Notes |
+|--------|-----|-------|
+| **Hugging Face Space (Docker + GPU)** | Best single-box demo | Bake `requirements.txt` + cache SD1.5; enable GPU hardware |
+| **Fly.io / Railway** | Web + match only on CPU | Put `/generate` behind a GPU worker (Modal / Replicate / RunPod) later |
+| **Modal / Replicate** | Generation worker | Call from FastAPI; keep web tier light |
+
+LoRA weights under `lora_trained_model/` are gitignored (large). Mount them at deploy time or ship without LoRA (prompt-only img2img still runs).
 
 ## 📱 Live Demo
 
-Visit: [Your Streamlit Cloud URL]
+No public URL yet — run locally with uvicorn (above).
 
 ## 💭 Motivation
 
@@ -60,10 +105,13 @@ The project combines classical portrait datasets with modern emotion detection t
 
 ## 📚 Project Structure
 
-- `portrait.py` - LoRA fine-tuning script for training on portrait datasets
-- `streamlit_portrait_web.py` - Web application for portrait generation
-- `download_images_fast.py` - Script for downloading portrait datasets from public museums
-- `selfie_to_portrait.py` - Core conversion script
+- `app/main.py` — FastAPI health / match / generate + static UI
+- `app/generation.py` — img2img (+ FaceID stub) generation module
+- `data/era_emotion_matcher.py` — era × emotion matching
+- `data/labels/portraits_104_era_emotion.csv` — labeled catalog
+- `scripts/smoke_web_mvp.py` — CLI smoke test
+- `streamlit_portrait_web.py` — legacy Streamlit UI
+- `selfie_to_portrait.py` / `portrait.py` — older conversion / training scripts
 
 ## 🚀 Installation
 

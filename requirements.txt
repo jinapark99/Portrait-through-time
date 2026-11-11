@@ -1,20 +1,33 @@
-streamlit>=1.50.0
-torch>=2.0.0
-torchvision>=0.15.0
-diffusers>=0.21.0
-transformers>=4.30.0
-accelerate>=0.20.0
-peft>=0.4.0
-mediapipe>=0.10.0
-opencv-python>=4.8.0
-pillow>=9.5.0
-numpy>=1.24.0
-requests>=2.31.0
+# Web MVP (FastAPI)
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
+
+# Emotion + matching
 deepface>=0.0.93
 tf-keras>=2.16.0
 tensorflow>=2.16.0
+opencv-python-headless>=4.8.0
+pillow>=9.5.0
+numpy>=1.24.0
+pandas>=2.0.0
 
+# Generation (img2img + optional LoRA)
+torch>=2.0.0
+torchvision>=0.15.0
+diffusers>=0.27.0
+transformers>=4.40.0
+accelerate>=0.20.0
+peft>=0.4.0
+safetensors>=0.4.0
+huggingface-hub>=0.20.0
 
+# Legacy local UIs (optional)
+streamlit>=1.50.0
+mediapipe>=0.10.0
+requests>=2.31.0
 
-
-
+# Optional FaceID extras (stubbed if missing):
+# insightface
+# onnxruntime
+# ip-adapter  # or install IP-Adapter FaceID weights separately
