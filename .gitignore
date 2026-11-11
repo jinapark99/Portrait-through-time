@@ -26,8 +26,10 @@ lora_trained_model 2/
 *.bin
 *.zip
 
-# Data directories
-data/
+# Data directories (keep emotion labels tracked)
+data/*
+!data/labels/
+!data/labels/**
 lora_training_data/
 lora_output/
 
@@ -49,6 +51,7 @@ lora_output/
 # CSV files (can be large)
 *.csv
 !requirements.csv
+!data/labels/*.csv
 
 # OS
 .DS_Store
