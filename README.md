@@ -31,7 +31,7 @@ A machine learning project that transforms selfies into artistic portraits using
 
 - **Web MVP**: FastAPI + static HTML/JS (`app/`)
 - **Matching**: DeepFace emotion → `data/era_emotion_matcher.py` (era × emotion catalog)
-- **Generation (D1)**: SD1.5 img2img + era prompt + **era LoRA when available** (else legacy mixed LoRA / prompt-only); IP-Adapter FaceID stubbed unless extras are installed
+- **Generation (D1)**: SD1.5 img2img + era prompt + **era LoRA when available** (else legacy mixed LoRA / prompt-only); **IP-Adapter FaceID** via insightface embeds + `h94/IP-Adapter-FaceID` when installed (Apple Silicon: FaceAnalysis on CPU ONNX, diffusion on MPS)
 - **Era LoRA**: `models/era_lora/<slug>/final` — Modern/Renaissance/Baroque/Romantic (300 steps each, MPS); Rococo/Medieval skipped. Demo defaults: img2img strength **0.82**, LoRA scale **1.6**
 - **Legacy UI**: Streamlit (`streamlit_portrait_web.py`) — local fallback only
 - **GPU**: Apple Silicon MPS / CUDA / CPU
@@ -75,9 +75,9 @@ python scripts/train_lora_era.py --era modern_impressionist --max-steps 80 --epo
 # Fuller Baroque/Romantic: see docs/era-lora-colab.md
 ```
 
-Env knobs: `PORTRAIT_BASE_MODEL`, `PORTRAIT_LORA_PATH`, `PORTRAIT_DISABLE_FACEID=1`.
+Env knobs: `PORTRAIT_BASE_MODEL`, `PORTRAIT_LORA_PATH`, `PORTRAIT_LORA_SCALE`, `PORTRAIT_FACEID_SCALE`, `PORTRAIT_DISABLE_FACEID=1`.
 
-**What works today:** match UI + DeepFace; img2img on MPS with **era-matched LoRA** when `models/era_lora/<slug>/final` exists (Modern trained); otherwise legacy `lora_trained_model/final` or prompt-only. FaceID stubbed until `insightface` + IP-Adapter FaceID weights are installed.
+**What works today:** match UI + DeepFace; img2img on MPS with **era-matched LoRA** when `models/era_lora/<slug>/final` exists; IP-Adapter FaceID identity lock when `insightface` is installed (weights from `h94/IP-Adapter-FaceID`). FaceID companion LoRA is photoreal — high `PORTRAIT_FACEID_SCALE` can soften era paint.
 
 **What’s left for public deploy:** GPU worker (or HF Space GPU), model bake into image / volume, FaceID wiring, and hosting secrets. Do not expect a free Railway/Fly CPU dyno to run SD1.5 comfortably.
 
@@ -117,7 +117,8 @@ The project combines classical portrait datasets with modern emotion detection t
 ## 📚 Project Structure
 
 - `app/main.py` — FastAPI health / match / generate + static UI
-- `app/generation.py` — img2img (+ FaceID stub) generation module
+- `app/generation.py` — img2img + IP-Adapter FaceID generation module
+- `scripts/smoke_era_lora_faceid.py` — fixed-selfie FaceID before/after era smoke
 - `data/era_emotion_matcher.py` — era × emotion matching
 - `data/labels/portraits_104_era_emotion.csv` — labeled catalog
 - `scripts/smoke_web_mvp.py` — CLI smoke test

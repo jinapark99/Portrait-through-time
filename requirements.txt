@@ -7,7 +7,9 @@ python-multipart>=0.0.9
 deepface>=0.0.93
 tf-keras>=2.16.0
 tensorflow>=2.16.0
-opencv-python-headless>=4.8.0
+# DeepFace needs CascadeClassifier — keep OpenCV 4.x (insightface may pull 5.x).
+# Use a single OpenCV package to avoid broken namespace installs.
+opencv-contrib-python-headless>=4.8.0,<5
 pillow>=9.5.0
 numpy>=1.24.0
 pandas>=2.0.0
@@ -27,7 +29,11 @@ streamlit>=1.50.0
 mediapipe>=0.10.0
 requests>=2.31.0
 
-# Optional FaceID extras (stubbed if missing):
-# insightface
-# onnxruntime
-# ip-adapter  # or install IP-Adapter FaceID weights separately
+# FaceID identity lock (Apple Silicon: insightface on CPU ONNX; SD on MPS)
+insightface>=0.7.3
+onnxruntime>=1.16.0
+onnx>=1.14.0
+# IP-Adapter FaceID weights download at runtime from h94/IP-Adapter-FaceID
+# via diffusers pipe.load_ip_adapter(...).
+# After installing insightface, re-pin OpenCV 4.x if it upgraded to 5.x:
+#   pip install 'opencv-python-headless>=4.8,<5' 'opencv-contrib-python-headless>=4.8,<5'

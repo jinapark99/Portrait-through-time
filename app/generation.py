@@ -1,7 +1,8 @@
 """D1-style portrait generation: img2img + era prompt + optional style LoRA.
 
-IP-Adapter FaceID is attempted when deps are present; otherwise clearly stubbed.
-Prefer a real image out on MPS / CUDA / CPU over a perfect FaceID path.
+IP-Adapter FaceID (insightface embeds + h94/IP-Adapter-FaceID) is used when deps
+are present; otherwise clearly stubbed. Prefer a real image out on MPS / CUDA /
+CPU over a perfect FaceID path.
 """
 
 from __future__ import annotations
@@ -37,7 +38,7 @@ ERA_SLUGS = {
 }
 NEGATIVE_PROMPT = (
     "blurry, low quality, distorted face, deformed, ugly, watermark, text, "
-    "photo, selfie, modern clothing, oversaturated"
+    "photo, selfie, modern clothing, oversaturated, male, old man, beard"
 )
 # Demo defaults: push era LoRA paint/lighting clearly vs prompt-only.
 # Earlier 0.55/0.72 smokes looked nearly identical — raise both.
@@ -46,6 +47,17 @@ DEFAULT_STRENGTH = 0.82
 DEFAULT_LORA_SCALE = 1.6
 DEFAULT_GUIDANCE = 8.0
 DEFAULT_STEPS = 24
+# FaceID scale: high locks identity; too high fights era paint (FaceID companion
+# LoRA is photoreal). 0.65–0.85 is the practical demo band on MPS.
+DEFAULT_FACEID_SCALE = float(os.environ.get("PORTRAIT_FACEID_SCALE", "0.75"))
+FACEID_REPO = os.environ.get("PORTRAIT_FACEID_REPO", "h94/IP-Adapter-FaceID")
+FACEID_WEIGHT = os.environ.get(
+    "PORTRAIT_FACEID_WEIGHT", "ip-adapter-faceid_sd15.bin"
+)
+
+# Process-wide InsightFace app (CPU / CoreML ONNX — works on Apple Silicon).
+_FACE_APP: Any | None = None
+_FACE_APP_ERROR: str | None = None
 
 
 @dataclass
@@ -55,6 +67,7 @@ class GenerationMeta:
     faceid_available: bool
     faceid_used: bool
     faceid_reason: str
+    faceid_scale: float
     lora_loaded: bool
     lora_path: str | None
     lora_scale: float
@@ -188,30 +201,75 @@ def resolve_lora_for_era(era: str | None) -> tuple[Path | None, str]:
 
 
 def faceid_status() -> tuple[bool, str]:
-    """Return (available, reason). FaceID needs insightface + IP-Adapter extras."""
+    """Return (available, reason). Needs insightface + diffusers load_ip_adapter."""
     if os.environ.get("PORTRAIT_DISABLE_FACEID", "").strip() in {"1", "true", "yes"}:
         return False, "disabled by PORTRAIT_DISABLE_FACEID"
     try:
         import insightface  # noqa: F401
+        from insightface.app import FaceAnalysis  # noqa: F401
     except Exception as exc:
         return False, f"insightface not available: {exc}"
     try:
-        # Optional IP-Adapter FaceID helper; often missing on Mac MVP installs.
-        from diffusers import IPAdapterFaceIDPlusPipeline  # type: ignore  # noqa: F401
-    except Exception:
-        try:
-            import ip_adapter  # noqa: F401
-        except Exception as exc:
-            return (
-                False,
-                "IP-Adapter FaceID extras missing "
-                f"(install insightface + ip-adapter / FaceID weights): {exc}",
-            )
-    return True, "insightface + FaceID pipeline importable"
+        from diffusers import StableDiffusionImg2ImgPipeline
+
+        if not hasattr(StableDiffusionImg2ImgPipeline, "load_ip_adapter"):
+            return False, "diffusers pipeline lacks load_ip_adapter"
+    except Exception as exc:
+        return False, f"diffusers not available for FaceID: {exc}"
+    return (
+        True,
+        f"insightface + diffusers IP-Adapter FaceID "
+        f"({FACEID_REPO}/{FACEID_WEIGHT})",
+    )
+
+
+def get_face_analysis() -> Any:
+    """Lazy InsightFace buffalo_l on CPU (Apple Silicon–safe)."""
+    global _FACE_APP, _FACE_APP_ERROR
+    if _FACE_APP is not None:
+        return _FACE_APP
+    if _FACE_APP_ERROR is not None:
+        raise RuntimeError(_FACE_APP_ERROR)
+    try:
+        from insightface.app import FaceAnalysis
+
+        # CoreML EP is available via onnxruntime on this Mac, but CPU is the
+        # most reliable path for buffalo_l detection embeds.
+        providers = ["CPUExecutionProvider"]
+        app = FaceAnalysis(name="buffalo_l", providers=providers)
+        app.prepare(ctx_id=-1, det_size=(640, 640))
+        _FACE_APP = app
+        return app
+    except Exception as exc:
+        _FACE_APP_ERROR = str(exc)
+        raise
+
+
+def extract_faceid_embed(image: Image.Image) -> Any:
+    """Return InsightFace normed embedding tensor shaped [1, 512] (CPU float32)."""
+    import cv2
+    import numpy as np
+    import torch
+
+    app = get_face_analysis()
+    rgb = np.asarray(image.convert("RGB"))
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    faces = app.get(bgr)
+    if not faces:
+        raise RuntimeError("InsightFace found no face in selfie")
+    face = max(
+        faces,
+        key=lambda f: float(f.bbox[2] - f.bbox[0]) * float(f.bbox[3] - f.bbox[1]),
+    )
+    emb = getattr(face, "normed_embedding", None)
+    if emb is None:
+        emb = face.embedding
+        emb = emb / (np.linalg.norm(emb) + 1e-8)
+    return torch.from_numpy(np.asarray(emb, dtype=np.float32)).unsqueeze(0)
 
 
 class PortraitGenerator:
-    """Lazy-loaded img2img generator with optional LoRA and FaceID stub."""
+    """Lazy-loaded img2img generator with optional LoRA and FaceID."""
 
     def __init__(
         self,
@@ -219,6 +277,7 @@ class PortraitGenerator:
         base_model: str = DEFAULT_BASE_MODEL,
         lora_path: str | Path | None = None,
         lora_scale: float = DEFAULT_LORA_SCALE,
+        faceid_scale: float = DEFAULT_FACEID_SCALE,
         device: str | None = None,
         allow_placeholder: bool = True,
     ) -> None:
@@ -235,6 +294,9 @@ class PortraitGenerator:
         )
         env_scale = os.environ.get("PORTRAIT_LORA_SCALE")
         self.lora_scale = float(env_scale) if env_scale else float(lora_scale)
+        self.faceid_scale = float(
+            os.environ.get("PORTRAIT_FACEID_SCALE", faceid_scale)
+        )
         self.device = device or pick_device()
         self.allow_placeholder = allow_placeholder
         self._pipe = None
@@ -243,6 +305,8 @@ class PortraitGenerator:
         self._lora_source = "none"
         self._active_lora_path: Path | None = None
         self._unet_base = None  # clean UNet before any PEFT wrap
+        self._faceid_adapter_loaded = False
+        self._scheduler_kind = "dpm"  # dpm | ddim
 
     @property
     def ready(self) -> bool:
@@ -321,12 +385,73 @@ class PortraitGenerator:
         unet = unet.to(self.device)
         self._unet_base = unet
         self._pipe.unet = unet
+        # IP-Adapter attention processors live on the UNet — clearing it drops FaceID.
+        self._faceid_adapter_loaded = False
+
+    def _use_dpm_scheduler(self) -> None:
+        from diffusers import DPMSolverMultistepScheduler
+
+        assert self._pipe is not None
+        if self._scheduler_kind == "dpm":
+            return
+        self._pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+            self._pipe.scheduler.config
+        )
+        self._scheduler_kind = "dpm"
+
+    def _use_ddim_scheduler(self) -> None:
+        from diffusers import DDIMScheduler
+
+        assert self._pipe is not None
+        if self._scheduler_kind == "ddim":
+            return
+        self._pipe.scheduler = DDIMScheduler.from_config(self._pipe.scheduler.config)
+        self._scheduler_kind = "ddim"
+
+    def _ensure_faceid_adapter(self) -> None:
+        """Load h94 IP-Adapter FaceID onto a clean (non-PEFT) UNet.
+
+        Order matters on this install: FaceID must load *before* wrapping the UNet
+        with a PEFT era LoRA. Attention slicing must be off — sliced processors
+        break load_ip_adapter.
+        """
+        assert self._pipe is not None
+        if self._faceid_adapter_loaded:
+            return
+        # Start from a clean UNet (no PEFT wrap) so FaceID can register faceid_0.
+        self._reset_unet()
+        try:
+            self._pipe.unet.set_default_attn_processor()
+        except Exception:
+            pass
+        # Attention slicing uses SlicedAttnProcessor and breaks FaceID load.
+        try:
+            self._pipe.disable_attention_slicing()
+        except Exception:
+            pass
+        logger.info(
+            "Loading IP-Adapter FaceID repo=%s weight=%s scale≈%s",
+            FACEID_REPO,
+            FACEID_WEIGHT,
+            self.faceid_scale,
+        )
+        self._pipe.load_ip_adapter(
+            FACEID_REPO,
+            subfolder=None,
+            weight_name=FACEID_WEIGHT,
+            image_encoder_folder=None,
+        )
+        self._pipe.set_ip_adapter_scale(self.faceid_scale)
+        self._faceid_adapter_loaded = True
+        # Base for subsequent PEFT wraps should be the FaceID-augmented UNet.
+        self._unet_base = self._pipe.unet
 
     def select_lora(
         self,
         era: str | None = None,
         *,
         disable_lora: bool = False,
+        keep_faceid: bool = False,
     ) -> tuple[Path | None, str]:
         """Attach the best LoRA for this era (or legacy / none). Idempotent."""
         self.ensure_loaded()
@@ -341,16 +466,30 @@ class PortraitGenerator:
         else:
             target, source = resolve_lora_for_era(era)
 
-        if target == self._active_lora_path and (
-            (target is None and not self._lora_loaded)
-            or (target is not None and self._lora_loaded)
+        if (
+            target == self._active_lora_path
+            and (
+                (target is None and not self._lora_loaded)
+                or (target is not None and self._lora_loaded)
+            )
+            and (not keep_faceid or self._faceid_adapter_loaded)
         ):
             self._lora_source = source
             self.lora_path = target
             return target, source
 
-        # Always reset UNet before attach/detach — PEFT mutates the wrapped module.
-        self._reset_unet()
+        if keep_faceid:
+            # FaceID first on clean UNet, then PEFT era LoRA on top.
+            self._ensure_faceid_adapter()
+        else:
+            # Always reset UNet before attach/detach — PEFT mutates in place.
+            self._reset_unet()
+            # Re-enable slicing for plain img2img memory behavior on MPS/CUDA.
+            if self.device in {"mps", "cuda"}:
+                try:
+                    self._pipe.enable_attention_slicing()
+                except Exception:
+                    pass
 
         self._lora_loaded = False
         self.lora_path = target
@@ -365,11 +504,12 @@ class PortraitGenerator:
             self._attach_lora(self._pipe, target, self.lora_scale)
             self._lora_loaded = True
             logger.info(
-                "LoRA loaded source=%s era=%s path=%s scale≈%s",
+                "LoRA loaded source=%s era=%s path=%s scale≈%s faceid=%s",
                 source,
                 era,
                 target,
                 self.lora_scale,
+                self._faceid_adapter_loaded,
             )
         except Exception as exc:
             logger.warning("LoRA load failed (%s): %s", target, exc)
@@ -377,11 +517,13 @@ class PortraitGenerator:
             self._lora_source = "none"
             self._active_lora_path = None
             self.lora_path = None
-            self._reset_unet()
+            if keep_faceid:
+                self._ensure_faceid_adapter()
+            else:
+                self._reset_unet()
         return self.lora_path, self._lora_source
 
     def _load_pipeline(self) -> None:
-        import torch
         from diffusers import DPMSolverMultistepScheduler, StableDiffusionImg2ImgPipeline
 
         dtype = _dtype_for(self.device)
@@ -406,13 +548,14 @@ class PortraitGenerator:
                 requires_safety_checker=False,
             )
         pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        self._scheduler_kind = "dpm"
 
         # Keep a clean UNet reference for era LoRA swapping (PEFT wraps in place).
         self._unet_base = pipe.unet
 
         if self.device == "mps":
             pipe = pipe.to("mps")
-            # Reduce memory spikes on Apple Silicon.
+            # Reduce memory spikes on Apple Silicon (disabled again when FaceID loads).
             try:
                 pipe.enable_attention_slicing()
             except Exception:
@@ -427,6 +570,7 @@ class PortraitGenerator:
             pipe = pipe.to("cpu")
 
         self._pipe = pipe
+        self._faceid_adapter_loaded = False
         # Attach default/legacy LoRA unless caller will select per-era immediately.
         if self._explicit_lora_path is not None or not list_era_loras():
             self.select_lora(None)
@@ -443,6 +587,7 @@ class PortraitGenerator:
         seed: int | None = 42,
         use_faceid: bool = True,
         disable_lora: bool = False,
+        faceid_scale: float | None = None,
     ) -> GenerationResult:
         """Generate a styled portrait. Falls back to placeholder if models fail."""
         t0 = time.perf_counter()
@@ -451,17 +596,42 @@ class PortraitGenerator:
         notes: list[str] = []
         faceid_used = False
         mode = "img2img"
+        if faceid_scale is not None:
+            self.faceid_scale = float(faceid_scale)
 
         if use_faceid and faceid_ok:
             try:
+                self.ensure_loaded()
+                _, lora_source = self.select_lora(
+                    era, disable_lora=disable_lora, keep_faceid=True
+                )
+                if lora_source == "era":
+                    notes.append(f"Using era LoRA for {era} with FaceID")
+                elif lora_source == "legacy":
+                    notes.append("Era LoRA missing; legacy LoRA + FaceID")
+                elif lora_source == "disabled":
+                    notes.append("LoRA disabled (prompt-only) + FaceID identity lock")
+                else:
+                    notes.append("No LoRA adapter; FaceID + prompt-only")
                 image = self._generate_faceid(
-                    init, prompt, strength=strength, steps=steps, guidance_scale=guidance_scale, seed=seed
+                    init,
+                    prompt,
+                    strength=strength,
+                    steps=steps,
+                    guidance_scale=guidance_scale,
+                    seed=seed,
                 )
                 faceid_used = True
                 mode = "faceid"
+                notes.append(
+                    f"FaceID used scale={self.faceid_scale} weight={FACEID_WEIGHT}"
+                )
             except Exception as exc:
-                notes.append(f"FaceID attempted but failed; falling back to img2img: {exc}")
+                notes.append(
+                    f"FaceID attempted but failed; falling back to img2img: {exc}"
+                )
                 faceid_reason = f"{faceid_reason}; runtime error: {exc}"
+                logger.warning("FaceID path failed: %s", exc)
                 image = None
         else:
             image = None
@@ -471,7 +641,9 @@ class PortraitGenerator:
         if image is None:
             try:
                 self.ensure_loaded()
-                _, lora_source = self.select_lora(era, disable_lora=disable_lora)
+                _, lora_source = self.select_lora(
+                    era, disable_lora=disable_lora, keep_faceid=False
+                )
                 if lora_source == "era":
                     notes.append(f"Using era LoRA for {era}")
                 elif lora_source == "legacy":
@@ -504,6 +676,7 @@ class PortraitGenerator:
             faceid_available=faceid_ok,
             faceid_used=faceid_used,
             faceid_reason=faceid_reason,
+            faceid_scale=float(self.faceid_scale) if faceid_used else 0.0,
             lora_loaded=self._lora_loaded,
             lora_path=str(self.lora_path) if self.lora_path else None,
             lora_scale=self.lora_scale,
@@ -519,6 +692,16 @@ class PortraitGenerator:
         )
         return GenerationResult(image=image, meta=meta)
 
+    def _make_generator(self, seed: int | None):
+        import torch
+
+        if seed is None:
+            return None
+        try:
+            return torch.Generator(device=self.device).manual_seed(seed)
+        except Exception:
+            return torch.Generator().manual_seed(seed)
+
     def _generate_img2img(
         self,
         init: Image.Image,
@@ -529,20 +712,13 @@ class PortraitGenerator:
         guidance_scale: float,
         seed: int | None,
     ) -> Image.Image:
-        import torch
-
         assert self._pipe is not None
-        generator = None
-        if seed is not None:
-            # MPS generators are device-specific in recent torch.
-            try:
-                generator = torch.Generator(device=self.device).manual_seed(seed)
-            except Exception:
-                generator = torch.Generator().manual_seed(seed)
+        self._use_dpm_scheduler()
+        generator = self._make_generator(seed)
 
         # Cross-attention / LoRA scale for older diffusers APIs.
         cross_attention_kwargs = None
-        if self._lora_loaded:
+        if self._lora_loaded and not self._faceid_adapter_loaded:
             cross_attention_kwargs = {"scale": self.lora_scale}
 
         result = self._pipe(
@@ -557,12 +733,47 @@ class PortraitGenerator:
         )
         return result.images[0]
 
-    def _generate_faceid(self, *args: Any, **kwargs: Any) -> Image.Image:
-        """Reserved for IP-Adapter FaceID. Raises until extras are installed."""
-        raise RuntimeError(
-            "FaceID path not wired for this install — use img2img. "
-            "Install insightface + IP-Adapter FaceID weights to enable."
+    def _faceid_image_embeds(self, init: Image.Image):
+        """Build CFG FaceID embeds: [negative zeros, positive insightface]."""
+        import torch
+
+        emb = extract_faceid_embed(init)  # [1, 512] CPU float32
+        # Match HF FaceID docs: stack → unsqueeze → cat(neg, pos).
+        ref = torch.stack([emb], dim=0).unsqueeze(0)  # [1, 1, 1, 512]
+        neg = torch.zeros_like(ref)
+        id_embeds = torch.cat([neg, ref], dim=0)
+        dtype = _dtype_for(self.device)
+        return id_embeds.to(device=self.device, dtype=dtype)
+
+    def _generate_faceid(
+        self,
+        init: Image.Image,
+        prompt: str,
+        *,
+        strength: float,
+        steps: int,
+        guidance_scale: float,
+        seed: int | None,
+    ) -> Image.Image:
+        """Real IP-Adapter FaceID img2img on the loaded pipe (MPS/CUDA/CPU)."""
+        assert self._pipe is not None
+        if not self._faceid_adapter_loaded:
+            self._ensure_faceid_adapter()
+        self._pipe.set_ip_adapter_scale(self.faceid_scale)
+        self._use_ddim_scheduler()
+        id_embeds = self._faceid_image_embeds(init)
+        generator = self._make_generator(seed)
+        result = self._pipe(
+            prompt=prompt,
+            negative_prompt=NEGATIVE_PROMPT,
+            image=init,
+            strength=max(0.15, min(0.95, strength)),
+            guidance_scale=guidance_scale,
+            num_inference_steps=max(4, steps),
+            generator=generator,
+            ip_adapter_image_embeds=[id_embeds],
         )
+        return result.images[0]
 
 
 def _as_rgb_512(image: Image.Image | Path | str) -> Image.Image:
