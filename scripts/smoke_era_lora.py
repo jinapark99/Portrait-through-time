@@ -35,7 +35,8 @@ def main() -> int:
     parser.add_argument(
         "--image",
         type=Path,
-        default=REPO / "test_happy_face.jpg",
+        default=None,
+        help="Fixed selfie for before/after. Prefer user selfie, not training portraits.",
     )
     parser.add_argument(
         "--era",
@@ -65,8 +66,24 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    if args.image is None:
+        candidates = [
+            REPO / "outputs" / "user_selfie_eval" / "user_selfie_input.png",
+            REPO / "outputs" / "era_lora_smoke" / "clean" / "selfie_original.png",
+            REPO / "IMG_5241.JPG",
+        ]
+        args.image = next((p for p in candidates if p.is_file()), REPO / "test_happy_face.jpg")
+        print(f"using selfie={args.image}")
+
     if not args.image.is_file():
         print(f"missing image: {args.image}", file=sys.stderr)
+        return 1
+    # Guard: never silently use a training-set portrait as the "selfie".
+    if "lora_training_data" in str(args.image) or "smart_portraits" in str(args.image):
+        print(
+            "ERROR: refusing training-set portrait as smoke selfie — pass a real selfie path",
+            file=sys.stderr,
+        )
         return 1
 
     catalog = load_catalog()

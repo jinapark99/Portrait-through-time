@@ -1,0 +1,272 @@
+{
+  "clean_smoke": true,
+  "selfie": {
+    "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/selfie_original.png",
+    "bytes": 1282833,
+    "sha256": "a860225be2272251b7550032b0ce3b97e3ce745aba224b104721c936e6e690ea"
+  },
+  "seed": 42,
+  "strength": 0.7,
+  "lora_scale": 1.4,
+  "guidance": 8.0,
+  "steps": 20,
+  "emotion": "neutral",
+  "faceid": "disabled / missing \u2014 identity may drift but init image is shared",
+  "device": "mps",
+  "eras": {
+    "renaissance": {
+      "era": "Renaissance",
+      "prefix": "renaissance",
+      "prompt": "portrait painting, renaissance oil portrait, sfumato, balanced classical composition, soft natural light, lifelike flesh tones, serene dignity, calm expression, balanced features, quiet presence",
+      "seed": 42,
+      "strength": 0.7,
+      "lora_scale": 1.4,
+      "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/renaissance/final",
+      "selfie_path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/selfie_original.png",
+      "selfie_sha256": "a860225be2272251b7550032b0ce3b97e3ce745aba224b104721c936e6e690ea",
+      "before": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/renaissance_before.png",
+        "bytes": 334467,
+        "sha256": "ea03a05d480027a198eaccdf88ff8c4fad80825ed86793f2d47559087df9fbb5",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": false,
+          "lora_path": null,
+          "lora_scale": 1.4,
+          "lora_source": "disabled",
+          "era": "Renaissance",
+          "strength": 0.7,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 8.805,
+          "prompt": "portrait painting, renaissance oil portrait, sfumato, balanced classical composition, soft natural light, lifelike flesh tones, serene dignity, calm expression, balanced features, quiet presence",
+          "notes": [
+            "LoRA disabled (prompt-only / baseline)"
+          ]
+        }
+      },
+      "after": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/renaissance_after.png",
+        "bytes": 337764,
+        "sha256": "7a8c106beb53a427c0734bee5d5c941ca2efd50a5c5c45d860052a998eda6fb5",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": true,
+          "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/renaissance/final",
+          "lora_scale": 1.4,
+          "lora_source": "era",
+          "era": "Renaissance",
+          "strength": 0.7,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 11.695,
+          "prompt": "portrait painting, renaissance oil portrait, sfumato, balanced classical composition, soft natural light, lifelike flesh tones, serene dignity, calm expression, balanced features, quiet presence",
+          "notes": [
+            "Using era LoRA for Renaissance"
+          ]
+        }
+      }
+    },
+    "baroque": {
+      "era": "Baroque",
+      "prefix": "baroque",
+      "prompt": "portrait painting, baroque portrait, dramatic chiaroscuro, rich deep colors, dynamic composition, intense presence, tenebrism, calm expression, balanced features, quiet presence",
+      "seed": 42,
+      "strength": 0.7,
+      "lora_scale": 1.4,
+      "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/baroque/final",
+      "selfie_path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/selfie_original.png",
+      "selfie_sha256": "a860225be2272251b7550032b0ce3b97e3ce745aba224b104721c936e6e690ea",
+      "before": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/baroque_before.png",
+        "bytes": 332752,
+        "sha256": "d115ae1e92c092bc0e174755eeaf8d9f0dfe1ae2c6fe90dd892edd58ee52e0de",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": false,
+          "lora_path": null,
+          "lora_scale": 1.4,
+          "lora_source": "disabled",
+          "era": "Baroque",
+          "strength": 0.7,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 9.597,
+          "prompt": "portrait painting, baroque portrait, dramatic chiaroscuro, rich deep colors, dynamic composition, intense presence, tenebrism, calm expression, balanced features, quiet presence",
+          "notes": [
+            "LoRA disabled (prompt-only / baseline)"
+          ]
+        }
+      },
+      "after": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/baroque_after.png",
+        "bytes": 369954,
+        "sha256": "941aa81ffaa0b842c2c5a7e5db083cfe27ea7aa11549942e4242e78a63903a6e",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": true,
+          "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/baroque/final",
+          "lora_scale": 1.4,
+          "lora_source": "era",
+          "era": "Baroque",
+          "strength": 0.7,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 10.348,
+          "prompt": "portrait painting, baroque portrait, dramatic chiaroscuro, rich deep colors, dynamic composition, intense presence, tenebrism, calm expression, balanced features, quiet presence",
+          "notes": [
+            "Using era LoRA for Baroque"
+          ]
+        }
+      }
+    },
+    "romantic": {
+      "era": "Romantic",
+      "prefix": "romantic",
+      "prompt": "portrait painting, romantic era portrait, soft dreamy atmosphere, emotional depth, warm muted tones, painterly brushwork, introspective mood, calm expression, balanced features, quiet presence",
+      "seed": 42,
+      "strength": 0.7,
+      "lora_scale": 1.4,
+      "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/romantic/final",
+      "selfie_path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/selfie_original.png",
+      "selfie_sha256": "a860225be2272251b7550032b0ce3b97e3ce745aba224b104721c936e6e690ea",
+      "before": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/romantic_before.png",
+        "bytes": 323192,
+        "sha256": "7e552353fb42bd8b2c174dde56c8ffdde83c5552a1b0a7170f2ccf4e1ea4aa20",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": false,
+          "lora_path": null,
+          "lora_scale": 1.4,
+          "lora_source": "disabled",
+          "era": "Romantic",
+          "strength": 0.7,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 9.724,
+          "prompt": "portrait painting, romantic era portrait, soft dreamy atmosphere, emotional depth, warm muted tones, painterly brushwork, introspective mood, calm expression, balanced features, quiet presence",
+          "notes": [
+            "LoRA disabled (prompt-only / baseline)"
+          ]
+        }
+      },
+      "after": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/romantic_after.png",
+        "bytes": 336498,
+        "sha256": "460367c30222caf9037cca250869e38903f78c7ba02ff060bc04b838cf8ec6b8",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": true,
+          "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/romantic/final",
+          "lora_scale": 1.4,
+          "lora_source": "era",
+          "era": "Romantic",
+          "strength": 0.7,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 9.708,
+          "prompt": "portrait painting, romantic era portrait, soft dreamy atmosphere, emotional depth, warm muted tones, painterly brushwork, introspective mood, calm expression, balanced features, quiet presence",
+          "notes": [
+            "Using era LoRA for Romantic"
+          ]
+        }
+      }
+    },
+    "modern": {
+      "era": "Modern/Impressionist",
+      "prefix": "modern",
+      "prompt": "portrait painting, impressionist modern portrait, visible brushstrokes, luminous color, contemporary informal pose, outdoor light, calm expression, balanced features, quiet presence",
+      "seed": 42,
+      "strength": 0.65,
+      "lora_scale": 1.4,
+      "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/modern_impressionist/final",
+      "selfie_path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/selfie_original.png",
+      "selfie_sha256": "a860225be2272251b7550032b0ce3b97e3ce745aba224b104721c936e6e690ea",
+      "retry_reason": "identity drift at 0.70; regenerated at 0.65",
+      "before": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/modern_before.png",
+        "bytes": 350940,
+        "sha256": "874e42f0e3b9edc93b32b5b71bbf03ccd44cd6872ada95d33bfd49dba633d037",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": false,
+          "lora_path": null,
+          "lora_scale": 1.4,
+          "lora_source": "disabled",
+          "era": "Modern/Impressionist",
+          "strength": 0.65,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 8.222,
+          "prompt": "portrait painting, impressionist modern portrait, visible brushstrokes, luminous color, contemporary informal pose, outdoor light, calm expression, balanced features, quiet presence",
+          "notes": [
+            "LoRA disabled (prompt-only / baseline)"
+          ]
+        }
+      },
+      "after": {
+        "path": "/Users/jinapark/Library/Application Support/Cursor/AgentStores/cursor_agent_stores/bc-1f55c5cc-32d8-47a6-af9d-5be289188a92/files/media/era-lora/modern_after.png",
+        "bytes": 287148,
+        "sha256": "a99fcd8d1dd7160b9fe3ef931dd14535c1fd931654eabe9b0aced7fdae8c81dd",
+        "meta": {
+          "mode": "img2img",
+          "device": "mps",
+          "faceid_available": false,
+          "faceid_used": false,
+          "faceid_reason": "insightface not available: No module named 'insightface'",
+          "lora_loaded": true,
+          "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/modern_impressionist/final",
+          "lora_scale": 1.4,
+          "lora_source": "era",
+          "era": "Modern/Impressionist",
+          "strength": 0.65,
+          "steps": 20,
+          "guidance_scale": 8.0,
+          "base_model": "runwayml/stable-diffusion-v1-5",
+          "elapsed_sec": 8.966,
+          "prompt": "portrait painting, impressionist modern portrait, visible brushstrokes, luminous color, contemporary informal pose, outdoor light, calm expression, balanced features, quiet presence",
+          "notes": [
+            "Using era LoRA for Modern/Impressionist"
+          ]
+        }
+      }
+    }
+  },
+  "strength_note": "Batch used strength=0.70; Modern overwritten with strength=0.65 retry for identity"
+}
