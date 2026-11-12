@@ -21,6 +21,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from app.generation import (  # noqa: E402
+    DEFAULT_GUIDANCE,
+    DEFAULT_STEPS,
+    DEFAULT_STRENGTH,
     faceid_status,
     get_generator,
     list_era_loras,
@@ -116,9 +119,9 @@ async def match(file: UploadFile = File(...)) -> JSONResponse:
 @app.post("/generate")
 async def generate(
     file: UploadFile = File(...),
-    strength: float = 0.72,
-    steps: int = 24,
-    guidance_scale: float = 7.0,
+    strength: float = DEFAULT_STRENGTH,
+    steps: int = DEFAULT_STEPS,
+    guidance_scale: float = DEFAULT_GUIDANCE,
     save: bool = True,
 ) -> Response:
     """Match + generate. Returns PNG; match/meta in response headers (and JSON sibling via /generate/json)."""
@@ -177,9 +180,9 @@ async def generate(
 @app.post("/generate/json")
 async def generate_json(
     file: UploadFile = File(...),
-    strength: float = 0.72,
-    steps: int = 24,
-    guidance_scale: float = 7.0,
+    strength: float = DEFAULT_STRENGTH,
+    steps: int = DEFAULT_STEPS,
+    guidance_scale: float = DEFAULT_GUIDANCE,
 ) -> JSONResponse:
     """Match + generate; returns JSON with match, generation meta, and relative image URL."""
     import base64

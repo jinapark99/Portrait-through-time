@@ -32,7 +32,7 @@ A machine learning project that transforms selfies into artistic portraits using
 - **Web MVP**: FastAPI + static HTML/JS (`app/`)
 - **Matching**: DeepFace emotion → `data/era_emotion_matcher.py` (era × emotion catalog)
 - **Generation (D1)**: SD1.5 img2img + era prompt + **era LoRA when available** (else legacy mixed LoRA / prompt-only); IP-Adapter FaceID stubbed unless extras are installed
-- **Era LoRA**: `models/era_lora/<slug>/final` — Modern (80 steps) + Renaissance/Baroque/Romantic (300 steps each) on MPS; Rococo/Medieval skipped
+- **Era LoRA**: `models/era_lora/<slug>/final` — Modern/Renaissance/Baroque/Romantic (300 steps each, MPS); Rococo/Medieval skipped. Demo defaults: img2img strength **0.82**, LoRA scale **1.6**
 - **Legacy UI**: Streamlit (`streamlit_portrait_web.py`) — local fallback only
 - **GPU**: Apple Silicon MPS / CUDA / CPU
 

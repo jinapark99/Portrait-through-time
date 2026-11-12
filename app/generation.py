@@ -39,6 +39,13 @@ NEGATIVE_PROMPT = (
     "blurry, low quality, distorted face, deformed, ugly, watermark, text, "
     "photo, selfie, modern clothing, oversaturated"
 )
+# Demo defaults: push era LoRA paint/lighting clearly vs prompt-only.
+# Earlier 0.55/0.72 smokes looked nearly identical — raise both.
+# Strength stays below ~0.9 so selfie structure is not fully wiped.
+DEFAULT_STRENGTH = 0.82
+DEFAULT_LORA_SCALE = 1.6
+DEFAULT_GUIDANCE = 8.0
+DEFAULT_STEPS = 24
 
 
 @dataclass
@@ -211,7 +218,7 @@ class PortraitGenerator:
         *,
         base_model: str = DEFAULT_BASE_MODEL,
         lora_path: str | Path | None = None,
-        lora_scale: float = 0.55,
+        lora_scale: float = DEFAULT_LORA_SCALE,
         device: str | None = None,
         allow_placeholder: bool = True,
     ) -> None:
@@ -226,7 +233,8 @@ class PortraitGenerator:
             if self._explicit_lora_path is not None
             else None
         )
-        self.lora_scale = lora_scale
+        env_scale = os.environ.get("PORTRAIT_LORA_SCALE")
+        self.lora_scale = float(env_scale) if env_scale else float(lora_scale)
         self.device = device or pick_device()
         self.allow_placeholder = allow_placeholder
         self._pipe = None
@@ -429,9 +437,9 @@ class PortraitGenerator:
         prompt: str,
         *,
         era: str | None = None,
-        strength: float = 0.72,
-        steps: int = 24,
-        guidance_scale: float = 7.0,
+        strength: float = DEFAULT_STRENGTH,
+        steps: int = DEFAULT_STEPS,
+        guidance_scale: float = DEFAULT_GUIDANCE,
         seed: int | None = 42,
         use_faceid: bool = True,
         disable_lora: bool = False,

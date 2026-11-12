@@ -100,7 +100,7 @@
     setStatus("Matching + generating (first run may download/load SD1.5)…");
     const body = new FormData();
     body.append("file", fileInput.files[0]);
-    const res = await fetch("/generate/json?steps=20&strength=0.72", {
+    const res = await fetch("/generate/json?steps=24&strength=0.82", {
       method: "POST",
       body,
     });

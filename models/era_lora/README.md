@@ -5,7 +5,7 @@ Per-era PEFT UNet adapters for SD1.5 (`r=4`), trained from
 
 | Era | Slug | Images | Status |
 |-----|------|-------:|--------|
-| Modern/Impressionist | `modern_impressionist` | 40 | Trained (MPS, 80 steps — earlier short run) |
+| Modern/Impressionist | `modern_impressionist` | 40 | Trained (MPS, **300** steps — retrained over 80-step run) |
 | Renaissance | `renaissance` | 15 | Trained (MPS, 300 steps) |
 | Baroque | `baroque` | 20 | Trained (MPS, 300 steps) |
 | Romantic | `romantic` | 20 | Trained (MPS, 300 steps) |

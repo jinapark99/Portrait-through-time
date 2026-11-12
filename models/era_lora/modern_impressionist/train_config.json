@@ -6,11 +6,11 @@
   "base_model": "runwayml/stable-diffusion-v1-5",
   "device": "mps",
   "dtype": "torch.float32",
-  "epochs_planned": 8,
-  "max_steps": 80,
+  "epochs_planned": 12,
+  "max_steps": 300,
   "learning_rate": 0.0001,
   "lora_rank": 4,
   "image_size": 512,
   "seed": 42,
-  "started_at": "2026-11-11T16:43:23"
+  "started_at": "2026-11-11T23:47:13"
 }

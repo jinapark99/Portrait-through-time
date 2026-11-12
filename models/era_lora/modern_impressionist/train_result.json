@@ -6,17 +6,17 @@
   "base_model": "runwayml/stable-diffusion-v1-5",
   "device": "mps",
   "dtype": "torch.float32",
-  "epochs_planned": 8,
-  "max_steps": 80,
+  "epochs_planned": 12,
+  "max_steps": 300,
   "learning_rate": 0.0001,
   "lora_rank": 4,
   "image_size": 512,
   "seed": 42,
-  "started_at": "2026-11-11T16:43:23",
-  "finished_at": "2026-11-11T16:44:15",
-  "elapsed_sec": 52.7,
-  "steps_completed": 80,
-  "epochs_completed": 2,
+  "started_at": "2026-11-11T23:47:13",
+  "finished_at": "2026-11-11T23:53:05",
+  "elapsed_sec": 351.7,
+  "steps_completed": 300,
+  "epochs_completed": 8,
   "history": [
     {
       "epoch": 1,
@@ -27,6 +27,36 @@
       "epoch": 2,
       "avg_loss": 0.12267615345481317,
       "steps": 80
+    },
+    {
+      "epoch": 3,
+      "avg_loss": 0.12151044001802802,
+      "steps": 120
+    },
+    {
+      "epoch": 4,
+      "avg_loss": 0.1302084682189161,
+      "steps": 160
+    },
+    {
+      "epoch": 5,
+      "avg_loss": 0.11594099817448296,
+      "steps": 200
+    },
+    {
+      "epoch": 6,
+      "avg_loss": 0.11231852316122967,
+      "steps": 240
+    },
+    {
+      "epoch": 7,
+      "avg_loss": 0.08147149869473651,
+      "steps": 280
+    },
+    {
+      "epoch": 8,
+      "avg_loss": 0.14752924744971097,
+      "steps": 300
     }
   ],
   "final_adapter": "models/era_lora/modern_impressionist/final",

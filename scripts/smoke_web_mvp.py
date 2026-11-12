@@ -25,8 +25,8 @@ def main() -> int:
         default=REPO / "test_happy_face.jpg",
         help="Input selfie / face image",
     )
-    parser.add_argument("--steps", type=int, default=16)
-    parser.add_argument("--strength", type=float, default=0.72)
+    parser.add_argument("--steps", type=int, default=20)
+    parser.add_argument("--strength", type=float, default=0.82)
     parser.add_argument(
         "--out",
         type=Path,

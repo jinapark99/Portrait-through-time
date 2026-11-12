@@ -18,7 +18,15 @@ sys.path.insert(0, str(REPO))
 
 from PIL import Image
 
-from app.generation import PortraitGenerator, list_era_loras, pick_device, resolve_era_lora_path
+from app.generation import (
+    DEFAULT_GUIDANCE,
+    DEFAULT_LORA_SCALE,
+    DEFAULT_STRENGTH,
+    PortraitGenerator,
+    list_era_loras,
+    pick_device,
+    resolve_era_lora_path,
+)
 from data.era_emotion_matcher import load_catalog, match_era_emotion
 
 
@@ -34,8 +42,10 @@ def main() -> int:
         default=None,
         help="Force era (default: matcher result). e.g. 'Modern/Impressionist'",
     )
-    parser.add_argument("--steps", type=int, default=16)
-    parser.add_argument("--strength", type=float, default=0.72)
+    parser.add_argument("--steps", type=int, default=20)
+    parser.add_argument("--strength", type=float, default=DEFAULT_STRENGTH)
+    parser.add_argument("--lora-scale", type=float, default=DEFAULT_LORA_SCALE)
+    parser.add_argument("--guidance", type=float, default=DEFAULT_GUIDANCE)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--out-dir",
@@ -47,6 +57,11 @@ def main() -> int:
         type=Path,
         default=None,
         help="Also copy before/after into this folder (Project media/era-lora)",
+    )
+    parser.add_argument(
+        "--store-prefix",
+        default=None,
+        help="Prefix for store filenames, e.g. renaissance → renaissance_before.png",
     )
     args = parser.parse_args()
 
@@ -70,19 +85,23 @@ def main() -> int:
     print(f"matched_era={match.era} using_era={era}")
     print(f"era_lora={era_path}")
     print(f"available={list_era_loras()}")
+    print(
+        f"strength={args.strength} lora_scale={args.lora_scale} "
+        f"guidance={args.guidance} steps={args.steps}"
+    )
     print(f"prompt={prompt[:120]}...")
 
     if era_path is None:
         print(
             "ERROR: no era LoRA checkpoint found. Train first:\n"
-            "  python scripts/train_lora_era.py --era modern_impressionist --max-steps 80",
+            "  python scripts/train_lora_era.py --era modern_impressionist --max-steps 300",
             file=sys.stderr,
         )
         return 2
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     selfie = Image.open(args.image)
-    gen = PortraitGenerator(allow_placeholder=False)
+    gen = PortraitGenerator(allow_placeholder=False, lora_scale=args.lora_scale)
 
     before = gen.generate(
         selfie,
@@ -91,6 +110,7 @@ def main() -> int:
         disable_lora=True,
         strength=args.strength,
         steps=args.steps,
+        guidance_scale=args.guidance,
         seed=args.seed,
         use_faceid=False,
     )
@@ -104,6 +124,7 @@ def main() -> int:
         disable_lora=False,
         strength=args.strength,
         steps=args.steps,
+        guidance_scale=args.guidance,
         seed=args.seed,
         use_faceid=False,
     )
@@ -114,6 +135,10 @@ def main() -> int:
         "era": era,
         "era_lora": str(era_path),
         "prompt": prompt,
+        "strength": args.strength,
+        "lora_scale": args.lora_scale,
+        "guidance": args.guidance,
+        "steps": args.steps,
         "match": match.to_dict(),
         "before": before.meta.to_dict(),
         "after": after.meta.to_dict(),
@@ -126,16 +151,42 @@ def main() -> int:
 
     if args.store_media:
         args.store_media.mkdir(parents=True, exist_ok=True)
-        for src, name in (
+        prefix = args.store_prefix
+        if not prefix and era:
+            # Modern/Impressionist → modern
+            slug = era.split("/")[0].strip().lower().replace(" ", "_")
+            prefix = slug
+        named = []
+        if prefix:
+            named = [
+                (before_path, f"{prefix}_before.png"),
+                (after_path, f"{prefix}_after.png"),
+            ]
+            for old_name, weak_name in (
+                (f"{prefix}_before.png", f"{prefix}_before_weak.png"),
+                (f"{prefix}_after.png", f"{prefix}_after_weak.png"),
+            ):
+                old = args.store_media / old_name
+                if old.is_file():
+                    weak = args.store_media / weak_name
+                    if not weak.exists():
+                        shutil.copy2(old, weak)
+                        print(f"kept weak prior as {weak}")
+        for src, name in [
             (before_path, "before_prompt_only.png"),
             (after_path, "after_era_lora.png"),
-        ):
+            *named,
+        ]:
             dst = args.store_media / name
             shutil.copy2(src, dst)
             print(f"copied {dst}")
         (args.store_media / "smoke_meta.json").write_text(
             json.dumps(meta, indent=2) + "\n", encoding="utf-8"
         )
+        if prefix:
+            (args.store_media / f"{prefix}_smoke_meta.json").write_text(
+                json.dumps(meta, indent=2) + "\n", encoding="utf-8"
+            )
 
     if not after.meta.lora_loaded or after.meta.lora_source != "era":
         print("WARNING: after image did not load era LoRA", file=sys.stderr)
