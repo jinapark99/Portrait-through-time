@@ -20,7 +20,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.generation import faceid_status, get_generator, pick_device  # noqa: E402
+from app.generation import (  # noqa: E402
+    faceid_status,
+    get_generator,
+    list_era_loras,
+    pick_device,
+)
 from data.era_emotion_matcher import (  # noqa: E402
     MODULE_VERSION,
     load_catalog,
@@ -90,6 +95,7 @@ def health() -> dict[str, Any]:
         "generator_ready": gen.ready,
         "generator_load_error": gen.load_error,
         "lora_path": str(gen.lora_path) if gen.lora_path else None,
+        "era_loras": list_era_loras(),
         "faceid_available": faceid_ok,
         "faceid_reason": faceid_reason,
         "outputs_dir": str(OUTPUTS_DIR),
@@ -124,11 +130,13 @@ async def generate(
         raise HTTPException(status_code=500, detail=f"Match failed: {exc}") from exc
 
     prompt = match_payload.get("style_prompt") or "classical oil portrait painting"
+    era = match_payload.get("era")
     gen = get_generator()
     try:
         result = gen.generate(
             img,
             prompt,
+            era=str(era) if era else None,
             strength=strength,
             steps=steps,
             guidance_scale=guidance_scale,
@@ -158,6 +166,7 @@ async def generate(
             (match_payload.get("emotion") or {}).get("dominant_emotion", "")
         ),
         "X-Portrait-Mode": result.meta.mode,
+        "X-Portrait-Lora-Source": result.meta.lora_source,
         "X-Portrait-Why": why_hdr,
         "X-Portrait-Filename": out_name,
         "Content-Disposition": f'inline; filename="{out_name}"',
@@ -182,11 +191,13 @@ async def generate_json(
         raise HTTPException(status_code=500, detail=f"Match failed: {exc}") from exc
 
     prompt = match_payload.get("style_prompt") or "classical oil portrait painting"
+    era = match_payload.get("era")
     gen = get_generator()
     try:
         result = gen.generate(
             img,
             prompt,
+            era=str(era) if era else None,
             strength=strength,
             steps=steps,
             guidance_scale=guidance_scale,

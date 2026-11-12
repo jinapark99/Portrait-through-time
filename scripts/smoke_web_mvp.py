@@ -57,6 +57,7 @@ def main() -> int:
     result = gen.generate(
         Image.open(args.image),
         match.style_prompt,
+        era=match.era,
         strength=args.strength,
         steps=args.steps,
     )

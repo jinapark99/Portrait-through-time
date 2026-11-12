@@ -1,0 +1,34 @@
+{
+  "slug": "modern_impressionist",
+  "era_arg": "modern_impressionist",
+  "dataset_dir": "/Users/jinapark/Desktop/py4us/Portrait/data/lora_training_data/by_era/modern_impressionist",
+  "n_images": 40,
+  "base_model": "runwayml/stable-diffusion-v1-5",
+  "device": "mps",
+  "dtype": "torch.float32",
+  "epochs_planned": 8,
+  "max_steps": 80,
+  "learning_rate": 0.0001,
+  "lora_rank": 4,
+  "image_size": 512,
+  "seed": 42,
+  "started_at": "2026-11-11T16:43:23",
+  "finished_at": "2026-11-11T16:44:15",
+  "elapsed_sec": 52.7,
+  "steps_completed": 80,
+  "epochs_completed": 2,
+  "history": [
+    {
+      "epoch": 1,
+      "avg_loss": 0.11151690950500778,
+      "steps": 40
+    },
+    {
+      "epoch": 2,
+      "avg_loss": 0.12267615345481317,
+      "steps": 80
+    }
+  ],
+  "final_adapter": "models/era_lora/modern_impressionist/final",
+  "honest_note": "This is a short but real PEFT UNet LoRA run (noise-prediction MSE), not a fake/stub checkpoint. Quality is limited by steps/images; Colab GPU recommended for fuller epochs."
+}

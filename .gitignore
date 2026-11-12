@@ -25,6 +25,13 @@ lora_trained_model 2/
 *.pth
 *.bin
 *.zip
+# Small per-era PEFT adapters (~3MB) — keep for interview reproducibility
+!models/
+!models/era_lora/
+!models/era_lora/**
+!models/era_lora/**/*.safetensors
+!models/era_lora/**/adapter_config.json
+!models/era_lora/**/*.json
 
 # Data directories (keep emotion labels + matcher module tracked)
 data/*
@@ -72,4 +79,10 @@ Thumbs.db
 # Checkpoints
 checkpoint-*/
 final/
+# Keep era LoRA final adapters (overrides final/ ignore)
+!models/era_lora/
+!models/era_lora/*/
+!models/era_lora/*/final/
+!models/era_lora/*/final/**
+!models/era_lora/*/train_*.json
 

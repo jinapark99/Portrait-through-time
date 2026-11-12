@@ -31,7 +31,8 @@ A machine learning project that transforms selfies into artistic portraits using
 
 - **Web MVP**: FastAPI + static HTML/JS (`app/`)
 - **Matching**: DeepFace emotion → `data/era_emotion_matcher.py` (era × emotion catalog)
-- **Generation (D1)**: SD1.5 img2img + era prompt + optional style LoRA; IP-Adapter FaceID stubbed unless extras are installed
+- **Generation (D1)**: SD1.5 img2img + era prompt + **era LoRA when available** (else legacy mixed LoRA / prompt-only); IP-Adapter FaceID stubbed unless extras are installed
+- **Era LoRA**: `models/era_lora/<slug>/final` (Modern/Impressionist trained on MPS; Baroque/Romantic via Colab — `docs/era-lora-colab.md`)
 - **Legacy UI**: Streamlit (`streamlit_portrait_web.py`) — local fallback only
 - **GPU**: Apple Silicon MPS / CUDA / CPU
 
@@ -62,11 +63,21 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 python scripts/smoke_web_mvp.py --image test_happy_face.jpg --steps 16
 # Match only:
 python scripts/smoke_web_mvp.py --match-only --image test_sad_face.jpg
+# Era LoRA before/after (needs models/era_lora/.../final):
+python scripts/smoke_era_lora.py --era "Modern/Impressionist" --image test_happy_face.jpg
+```
+
+Train / continue era adapters:
+
+```bash
+python scripts/split_era_lora_datasets.py
+python scripts/train_lora_era.py --era modern_impressionist --max-steps 80 --epochs 8
+# Fuller Baroque/Romantic: see docs/era-lora-colab.md
 ```
 
 Env knobs: `PORTRAIT_BASE_MODEL`, `PORTRAIT_LORA_PATH`, `PORTRAIT_DISABLE_FACEID=1`.
 
-**What works today:** match UI + DeepFace; img2img generation on MPS when SD1.5 + (optional) `lora_trained_model/final` are available. FaceID is flagged stubbed until `insightface` + IP-Adapter FaceID weights are installed.
+**What works today:** match UI + DeepFace; img2img on MPS with **era-matched LoRA** when `models/era_lora/<slug>/final` exists (Modern trained); otherwise legacy `lora_trained_model/final` or prompt-only. FaceID stubbed until `insightface` + IP-Adapter FaceID weights are installed.
 
 **What’s left for public deploy:** GPU worker (or HF Space GPU), model bake into image / volume, FaceID wiring, and hosting secrets. Do not expect a free Railway/Fly CPU dyno to run SD1.5 comfortably.
 

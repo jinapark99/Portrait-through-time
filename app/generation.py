@@ -26,6 +26,15 @@ DEFAULT_LORA_PATHS = (
     REPO_ROOT / "lora_trained_model" / "final",
     REPO_ROOT / "lora_trained_model 2" / "final",
 )
+ERA_LORA_ROOT = REPO_ROOT / "models" / "era_lora"
+ERA_SLUGS = {
+    "Medieval/Gothic": "medieval_gothic",
+    "Renaissance": "renaissance",
+    "Baroque": "baroque",
+    "Rococo": "rococo",
+    "Romantic": "romantic",
+    "Modern/Impressionist": "modern_impressionist",
+}
 NEGATIVE_PROMPT = (
     "blurry, low quality, distorted face, deformed, ugly, watermark, text, "
     "photo, selfie, modern clothing, oversaturated"
@@ -42,6 +51,8 @@ class GenerationMeta:
     lora_loaded: bool
     lora_path: str | None
     lora_scale: float
+    lora_source: str  # era | legacy | none | disabled
+    era: str | None
     strength: float
     steps: int
     guidance_scale: float
@@ -87,23 +98,86 @@ def _dtype_for(device: str):
     return torch.float32
 
 
+def _adapter_dir_ok(path: Path) -> bool:
+    if not path.exists():
+        return False
+    return (
+        (path / "adapter_config.json").is_file()
+        or (path / "adapter_model.safetensors").exists()
+        or (path / "pytorch_lora_weights.safetensors").exists()
+        or bool(list(path.glob("*.safetensors")))
+    )
+
+
+def era_to_slug(era: str | None) -> str | None:
+    if not era:
+        return None
+    if era in ERA_SLUGS:
+        return ERA_SLUGS[era]
+    return era.strip().lower().replace("/", "_").replace(" ", "_")
+
+
 def resolve_lora_path(explicit: str | Path | None = None) -> Path | None:
     if explicit:
         p = Path(explicit)
-        return p if p.exists() else None
+        return p if _adapter_dir_ok(p) else None
     env = os.environ.get("PORTRAIT_LORA_PATH")
     if env:
         p = Path(env)
-        if p.exists():
+        if _adapter_dir_ok(p):
             return p
     for candidate in DEFAULT_LORA_PATHS:
-        if candidate.exists() and (
-            (candidate / "adapter_model.safetensors").exists()
-            or (candidate / "pytorch_lora_weights.safetensors").exists()
-            or list(candidate.glob("*.safetensors"))
-        ):
+        if _adapter_dir_ok(candidate):
             return candidate
     return None
+
+
+def resolve_era_lora_path(era: str | None) -> Path | None:
+    """Return models/era_lora/<slug>/final when a real era adapter exists."""
+    slug = era_to_slug(era)
+    if not slug:
+        return None
+    for candidate in (
+        ERA_LORA_ROOT / slug / "final",
+        ERA_LORA_ROOT / slug,
+    ):
+        if _adapter_dir_ok(candidate):
+            return candidate
+    return None
+
+
+def list_era_loras() -> dict[str, str]:
+    """Map era label → adapter directory for health / debugging."""
+    found: dict[str, str] = {}
+    for era, slug in ERA_SLUGS.items():
+        path = resolve_era_lora_path(era)
+        if path is not None:
+            found[era] = str(path)
+    if ERA_LORA_ROOT.is_dir():
+        for child in ERA_LORA_ROOT.iterdir():
+            if not child.is_dir():
+                continue
+            for candidate in (child / "final", child):
+                if _adapter_dir_ok(candidate):
+                    # Keep first hit; prefer known era labels already filled.
+                    if not any(Path(p) == candidate for p in found.values()):
+                        found.setdefault(child.name, str(candidate))
+                    break
+    return found
+
+
+def resolve_lora_for_era(era: str | None) -> tuple[Path | None, str]:
+    """Pick era LoRA if present, else legacy mixed LoRA, else None.
+
+    Returns (path, source) where source is era|legacy|none.
+    """
+    era_path = resolve_era_lora_path(era)
+    if era_path is not None:
+        return era_path, "era"
+    legacy = resolve_lora_path()
+    if legacy is not None:
+        return legacy, "legacy"
+    return None, "none"
 
 
 def faceid_status() -> tuple[bool, str]:
@@ -142,13 +216,25 @@ class PortraitGenerator:
         allow_placeholder: bool = True,
     ) -> None:
         self.base_model = base_model
-        self.lora_path = resolve_lora_path(lora_path)
+        # Explicit path wins; otherwise choose per-era at generate() time.
+        self._explicit_lora_path = (
+            Path(lora_path) if lora_path is not None else None
+        )
+        # Do not eagerly point at legacy LoRA — select_lora() decides at generate time.
+        self.lora_path = (
+            resolve_lora_path(self._explicit_lora_path)
+            if self._explicit_lora_path is not None
+            else None
+        )
         self.lora_scale = lora_scale
         self.device = device or pick_device()
         self.allow_placeholder = allow_placeholder
         self._pipe = None
         self._load_error: str | None = None
         self._lora_loaded = False
+        self._lora_source = "none"
+        self._active_lora_path: Path | None = None
+        self._unet_base = None  # clean UNet before any PEFT wrap
 
     @property
     def ready(self) -> bool:
@@ -169,29 +255,35 @@ class PortraitGenerator:
             raise
 
     @staticmethod
-    def _attach_lora(pipe: Any, lora_path: Path, lora_scale: float) -> None:
-        """Load PEFT-style UNet LoRA adapters used by this repo."""
+    def _scale_peft(unet: Any, lora_scale: float) -> None:
+        try:
+            for module in unet.modules():
+                if hasattr(module, "scaling") and isinstance(module.scaling, dict):
+                    for k in list(module.scaling.keys()):
+                        module.scaling[k] = lora_scale
+                elif hasattr(module, "scaling") and isinstance(module.scaling, (int, float)):
+                    module.scaling = lora_scale
+        except Exception:
+            pass
+
+    def _attach_lora(self, pipe: Any, lora_path: Path, lora_scale: float) -> None:
+        """Load PEFT-style UNet LoRA adapters used by this repo onto a clean UNet."""
         # Prefer PEFT when adapter_config.json is present (our trained format).
         if (Path(lora_path) / "adapter_config.json").is_file():
             from peft import PeftModel
 
-            pipe.unet = PeftModel.from_pretrained(pipe.unet, str(lora_path))
+            base = self._unet_base if self._unet_base is not None else pipe.unet
+            pipe.unet = PeftModel.from_pretrained(base, str(lora_path))
             try:
                 pipe.unet.set_adapter(pipe.unet.active_adapter)
             except Exception:
                 pass
-            # Approximate strength via scaling if supported.
-            try:
-                for module in pipe.unet.modules():
-                    if hasattr(module, "scaling") and isinstance(module.scaling, dict):
-                        for k in list(module.scaling.keys()):
-                            module.scaling[k] = lora_scale
-                    elif hasattr(module, "scaling") and isinstance(module.scaling, (int, float)):
-                        module.scaling = lora_scale
-            except Exception:
-                pass
+            self._scale_peft(pipe.unet, lora_scale)
             return
 
+        # Non-PEFT weights: start from clean UNet then load_lora_weights.
+        if self._unet_base is not None:
+            pipe.unet = self._unet_base
         try:
             pipe.load_lora_weights(str(lora_path), prefix=None)
         except TypeError:
@@ -203,6 +295,82 @@ class PortraitGenerator:
                     pipe.set_adapters(adapters, adapter_weights=[lora_scale] * len(adapters))
             except Exception:
                 pass
+
+    def _reset_unet(self) -> None:
+        """Reload a clean UNet so PEFT wraps never stack or leak across eras."""
+        from diffusers import UNet2DConditionModel
+
+        assert self._pipe is not None
+        dtype = _dtype_for(self.device)
+        try:
+            unet = UNet2DConditionModel.from_pretrained(
+                self.base_model, subfolder="unet", dtype=dtype
+            )
+        except TypeError:
+            unet = UNet2DConditionModel.from_pretrained(
+                self.base_model, subfolder="unet", torch_dtype=dtype
+            )
+        unet = unet.to(self.device)
+        self._unet_base = unet
+        self._pipe.unet = unet
+
+    def select_lora(
+        self,
+        era: str | None = None,
+        *,
+        disable_lora: bool = False,
+    ) -> tuple[Path | None, str]:
+        """Attach the best LoRA for this era (or legacy / none). Idempotent."""
+        self.ensure_loaded()
+        assert self._pipe is not None
+
+        if disable_lora:
+            target, source = None, "disabled"
+        elif self._explicit_lora_path is not None:
+            target, source = resolve_lora_path(self._explicit_lora_path), "legacy"
+            if target is None:
+                target, source = None, "none"
+        else:
+            target, source = resolve_lora_for_era(era)
+
+        if target == self._active_lora_path and (
+            (target is None and not self._lora_loaded)
+            or (target is not None and self._lora_loaded)
+        ):
+            self._lora_source = source
+            self.lora_path = target
+            return target, source
+
+        # Always reset UNet before attach/detach — PEFT mutates the wrapped module.
+        self._reset_unet()
+
+        self._lora_loaded = False
+        self.lora_path = target
+        self._lora_source = source
+        self._active_lora_path = target
+
+        if target is None:
+            logger.info("LoRA disabled / unavailable (source=%s)", source)
+            return None, source
+
+        try:
+            self._attach_lora(self._pipe, target, self.lora_scale)
+            self._lora_loaded = True
+            logger.info(
+                "LoRA loaded source=%s era=%s path=%s scale≈%s",
+                source,
+                era,
+                target,
+                self.lora_scale,
+            )
+        except Exception as exc:
+            logger.warning("LoRA load failed (%s): %s", target, exc)
+            self._lora_loaded = False
+            self._lora_source = "none"
+            self._active_lora_path = None
+            self.lora_path = None
+            self._reset_unet()
+        return self.lora_path, self._lora_source
 
     def _load_pipeline(self) -> None:
         import torch
@@ -231,14 +399,8 @@ class PortraitGenerator:
             )
         pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
 
-        if self.lora_path is not None:
-            try:
-                self._attach_lora(pipe, self.lora_path, self.lora_scale)
-                self._lora_loaded = True
-                logger.info("LoRA loaded from %s (scale≈%s)", self.lora_path, self.lora_scale)
-            except Exception as exc:
-                logger.warning("LoRA load failed (%s): %s", self.lora_path, exc)
-                self._lora_loaded = False
+        # Keep a clean UNet reference for era LoRA swapping (PEFT wraps in place).
+        self._unet_base = pipe.unet
 
         if self.device == "mps":
             pipe = pipe.to("mps")
@@ -257,17 +419,22 @@ class PortraitGenerator:
             pipe = pipe.to("cpu")
 
         self._pipe = pipe
+        # Attach default/legacy LoRA unless caller will select per-era immediately.
+        if self._explicit_lora_path is not None or not list_era_loras():
+            self.select_lora(None)
 
     def generate(
         self,
         selfie: Image.Image | Path | str,
         prompt: str,
         *,
+        era: str | None = None,
         strength: float = 0.72,
         steps: int = 24,
         guidance_scale: float = 7.0,
         seed: int | None = 42,
         use_faceid: bool = True,
+        disable_lora: bool = False,
     ) -> GenerationResult:
         """Generate a styled portrait. Falls back to placeholder if models fail."""
         t0 = time.perf_counter()
@@ -296,6 +463,15 @@ class PortraitGenerator:
         if image is None:
             try:
                 self.ensure_loaded()
+                _, lora_source = self.select_lora(era, disable_lora=disable_lora)
+                if lora_source == "era":
+                    notes.append(f"Using era LoRA for {era}")
+                elif lora_source == "legacy":
+                    notes.append("Era LoRA missing; using legacy mixed LoRA")
+                elif lora_source == "disabled":
+                    notes.append("LoRA disabled (prompt-only / baseline)")
+                else:
+                    notes.append("No LoRA adapter found; prompt-only")
                 image = self._generate_img2img(
                     init,
                     prompt,
@@ -323,6 +499,8 @@ class PortraitGenerator:
             lora_loaded=self._lora_loaded,
             lora_path=str(self.lora_path) if self.lora_path else None,
             lora_scale=self.lora_scale,
+            lora_source=self._lora_source,
+            era=era,
             strength=strength,
             steps=steps,
             guidance_scale=guidance_scale,
