@@ -1,0 +1,16 @@
+{
+  "slug": "renaissance",
+  "era_arg": "renaissance",
+  "dataset_dir": "/Users/jinapark/Desktop/py4us/Portrait/data/lora_training_data/by_era/renaissance",
+  "n_images": 15,
+  "base_model": "runwayml/stable-diffusion-v1-5",
+  "device": "mps",
+  "dtype": "torch.float32",
+  "epochs_planned": 25,
+  "max_steps": 300,
+  "learning_rate": 0.0001,
+  "lora_rank": 4,
+  "image_size": 512,
+  "seed": 42,
+  "started_at": "2026-11-11T23:23:05"
+}

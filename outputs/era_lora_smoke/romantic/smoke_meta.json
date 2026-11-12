@@ -1,0 +1,142 @@
+{
+  "era": "Romantic",
+  "era_lora": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/romantic/final",
+  "prompt": "Romantic oil portrait painting of a person, museum lighting, detailed brushwork, happy expression",
+  "match": {
+    "emotion": {
+      "dominant_emotion": "happy",
+      "scores": {
+        "angry": 5.661978264015488e-08,
+        "disgust": 1.5678720257858436e-12,
+        "fear": 1.1021948012057692e-06,
+        "happy": 99.53781127929688,
+        "sad": 1.1954591172980145e-05,
+        "surprise": 0.04831456020474434,
+        "neutral": 0.4138643443584442
+      },
+      "top_emotions": [
+        {
+          "emotion": "happy",
+          "score": 99.53781127929688
+        },
+        {
+          "emotion": "neutral",
+          "score": 0.4138643443584442
+        }
+      ],
+      "face_detected": true,
+      "confidence": 0.92,
+      "detector": "opencv",
+      "source": "deepface"
+    },
+    "era": "Modern/Impressionist",
+    "match_mode": "era_emotion",
+    "references": [
+      {
+        "filename": "0044.jpg",
+        "path": "/Users/jinapark/Desktop/py4us/Portrait/data/lora_training_data/images/0044.jpg",
+        "era": "Modern/Impressionist",
+        "dominant_emotion": "happy",
+        "artist": "Henri Fantin-Latour",
+        "title": "Self-Portrait",
+        "similarity": 1.0,
+        "face_detected": true,
+        "emotion_scores": {
+          "angry": 1.602191878191661e-05,
+          "disgust": 2.3389200298762347e-11,
+          "fear": 1.1285891332590836e-06,
+          "happy": 99.6427001953125,
+          "sad": 0.00013652128109242767,
+          "surprise": 0.0001432231074431911,
+          "neutral": 0.3570038676261902
+        }
+      },
+      {
+        "filename": "0064.jpg",
+        "path": "/Users/jinapark/Desktop/py4us/Portrait/data/lora_training_data/images/0064.jpg",
+        "era": "Modern/Impressionist",
+        "dominant_emotion": "happy",
+        "artist": "Samuel Jessurun de Mesquita",
+        "title": "Cactus with Self-Portrait",
+        "similarity": 0.999865,
+        "face_detected": true,
+        "emotion_scores": {
+          "angry": 0.35584816336631775,
+          "disgust": 2.8137823392171413e-05,
+          "fear": 0.06784414499998093,
+          "happy": 97.5994644165039,
+          "sad": 0.0002154279500246048,
+          "surprise": 0.007906959392130375,
+          "neutral": 1.9686821699142456
+        }
+      },
+      {
+        "filename": "0098.jpg",
+        "path": "/Users/jinapark/Desktop/py4us/Portrait/data/lora_training_data/images/0098.jpg",
+        "era": "Modern/Impressionist",
+        "dominant_emotion": "happy",
+        "artist": "Goodwin & Company",
+        "title": "Maginley, from the Actors and Actresses series (N171) for Gypsy Queen Cigarettes",
+        "similarity": 0.998953,
+        "face_detected": true,
+        "emotion_scores": {
+          "angry": 0.0007524299435317516,
+          "disgust": 2.6914281079370994e-06,
+          "fear": 1.8589035272598267,
+          "happy": 93.66040802001953,
+          "sad": 0.22254762053489685,
+          "surprise": 0.008869330398738384,
+          "neutral": 4.248520374298096
+        }
+      }
+    ],
+    "style_prompt": "portrait painting, impressionist modern portrait, visible brushstrokes, luminous color, contemporary informal pose, outdoor light, warm smile, bright eyes, cheerful expression",
+    "why_this_era": "Your happy reading pairs with Modern/Impressionist portraits \u2014 informal light and living color.",
+    "catalog_size": 104,
+    "module_version": "1.0.0"
+  },
+  "before": {
+    "mode": "img2img",
+    "device": "mps",
+    "faceid_available": false,
+    "faceid_used": false,
+    "faceid_reason": "insightface not available: No module named 'insightface'",
+    "lora_loaded": false,
+    "lora_path": null,
+    "lora_scale": 0.55,
+    "lora_source": "disabled",
+    "era": "Romantic",
+    "strength": 0.72,
+    "steps": 12,
+    "guidance_scale": 7.0,
+    "base_model": "runwayml/stable-diffusion-v1-5",
+    "elapsed_sec": 8.4,
+    "prompt": "Romantic oil portrait painting of a person, museum lighting, detailed brushwork, happy expression",
+    "notes": [
+      "LoRA disabled (prompt-only / baseline)"
+    ]
+  },
+  "after": {
+    "mode": "img2img",
+    "device": "mps",
+    "faceid_available": false,
+    "faceid_used": false,
+    "faceid_reason": "insightface not available: No module named 'insightface'",
+    "lora_loaded": true,
+    "lora_path": "/Users/jinapark/Desktop/py4us/Portrait/models/era_lora/romantic/final",
+    "lora_scale": 0.55,
+    "lora_source": "era",
+    "era": "Romantic",
+    "strength": 0.72,
+    "steps": 12,
+    "guidance_scale": 7.0,
+    "base_model": "runwayml/stable-diffusion-v1-5",
+    "elapsed_sec": 6.586,
+    "prompt": "Romantic oil portrait painting of a person, museum lighting, detailed brushwork, happy expression",
+    "notes": [
+      "Using era LoRA for Romantic"
+    ]
+  },
+  "before_path": "outputs/era_lora_smoke/romantic/before_prompt_only.png",
+  "after_path": "outputs/era_lora_smoke/romantic/after_era_lora.png"
+}

@@ -1,0 +1,99 @@
+{
+  "slug": "romantic",
+  "era_arg": "romantic",
+  "dataset_dir": "/Users/jinapark/Desktop/py4us/Portrait/data/lora_training_data/by_era/romantic",
+  "n_images": 20,
+  "base_model": "runwayml/stable-diffusion-v1-5",
+  "device": "mps",
+  "dtype": "torch.float32",
+  "epochs_planned": 20,
+  "max_steps": 300,
+  "learning_rate": 0.0001,
+  "lora_rank": 4,
+  "image_size": 512,
+  "seed": 42,
+  "started_at": "2026-11-11T23:35:30",
+  "finished_at": "2026-11-11T23:41:14",
+  "elapsed_sec": 344.0,
+  "steps_completed": 300,
+  "epochs_completed": 15,
+  "history": [
+    {
+      "epoch": 1,
+      "avg_loss": 0.08465304474812001,
+      "steps": 20
+    },
+    {
+      "epoch": 2,
+      "avg_loss": 0.14565418181591666,
+      "steps": 40
+    },
+    {
+      "epoch": 3,
+      "avg_loss": 0.18011629356769845,
+      "steps": 60
+    },
+    {
+      "epoch": 4,
+      "avg_loss": 0.10932853545527906,
+      "steps": 80
+    },
+    {
+      "epoch": 5,
+      "avg_loss": 0.139202539564576,
+      "steps": 100
+    },
+    {
+      "epoch": 6,
+      "avg_loss": 0.1170468018273823,
+      "steps": 120
+    },
+    {
+      "epoch": 7,
+      "avg_loss": 0.11794129448244348,
+      "steps": 140
+    },
+    {
+      "epoch": 8,
+      "avg_loss": 0.15596454390324652,
+      "steps": 160
+    },
+    {
+      "epoch": 9,
+      "avg_loss": 0.14626276108901948,
+      "steps": 180
+    },
+    {
+      "epoch": 10,
+      "avg_loss": 0.1238052052911371,
+      "steps": 200
+    },
+    {
+      "epoch": 11,
+      "avg_loss": 0.11541247817222029,
+      "steps": 220
+    },
+    {
+      "epoch": 12,
+      "avg_loss": 0.12453180459560827,
+      "steps": 240
+    },
+    {
+      "epoch": 13,
+      "avg_loss": 0.093832494947128,
+      "steps": 260
+    },
+    {
+      "epoch": 14,
+      "avg_loss": 0.09248588681221008,
+      "steps": 280
+    },
+    {
+      "epoch": 15,
+      "avg_loss": 0.1741228261962533,
+      "steps": 300
+    }
+  ],
+  "final_adapter": "models/era_lora/romantic/final",
+  "honest_note": "This is a short but real PEFT UNet LoRA run (noise-prediction MSE), not a fake/stub checkpoint. Quality is limited by steps/images; Colab GPU recommended for fuller epochs."
+}

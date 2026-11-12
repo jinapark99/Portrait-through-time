@@ -1,0 +1,124 @@
+{
+  "slug": "renaissance",
+  "era_arg": "renaissance",
+  "dataset_dir": "/Users/jinapark/Desktop/py4us/Portrait/data/lora_training_data/by_era/renaissance",
+  "n_images": 15,
+  "base_model": "runwayml/stable-diffusion-v1-5",
+  "device": "mps",
+  "dtype": "torch.float32",
+  "epochs_planned": 25,
+  "max_steps": 300,
+  "learning_rate": 0.0001,
+  "lora_rank": 4,
+  "image_size": 512,
+  "seed": 42,
+  "started_at": "2026-11-11T23:23:05",
+  "finished_at": "2026-11-11T23:28:33",
+  "elapsed_sec": 328.0,
+  "steps_completed": 300,
+  "epochs_completed": 20,
+  "history": [
+    {
+      "epoch": 1,
+      "avg_loss": 0.10102845563863715,
+      "steps": 15
+    },
+    {
+      "epoch": 2,
+      "avg_loss": 0.18855718445653716,
+      "steps": 30
+    },
+    {
+      "epoch": 3,
+      "avg_loss": 0.14552219410737355,
+      "steps": 45
+    },
+    {
+      "epoch": 4,
+      "avg_loss": 0.14417196708576133,
+      "steps": 60
+    },
+    {
+      "epoch": 5,
+      "avg_loss": 0.10791765606651703,
+      "steps": 75
+    },
+    {
+      "epoch": 6,
+      "avg_loss": 0.16187732610851527,
+      "steps": 90
+    },
+    {
+      "epoch": 7,
+      "avg_loss": 0.1602323182237645,
+      "steps": 105
+    },
+    {
+      "epoch": 8,
+      "avg_loss": 0.1109718951707085,
+      "steps": 120
+    },
+    {
+      "epoch": 9,
+      "avg_loss": 0.13784099935243527,
+      "steps": 135
+    },
+    {
+      "epoch": 10,
+      "avg_loss": 0.1519772235304117,
+      "steps": 150
+    },
+    {
+      "epoch": 11,
+      "avg_loss": 0.13519535874947905,
+      "steps": 165
+    },
+    {
+      "epoch": 12,
+      "avg_loss": 0.14987539139886696,
+      "steps": 180
+    },
+    {
+      "epoch": 13,
+      "avg_loss": 0.14318535216152667,
+      "steps": 195
+    },
+    {
+      "epoch": 14,
+      "avg_loss": 0.0854074237557749,
+      "steps": 210
+    },
+    {
+      "epoch": 15,
+      "avg_loss": 0.16103272726759316,
+      "steps": 225
+    },
+    {
+      "epoch": 16,
+      "avg_loss": 0.12442542656014363,
+      "steps": 240
+    },
+    {
+      "epoch": 17,
+      "avg_loss": 0.09066340760327876,
+      "steps": 255
+    },
+    {
+      "epoch": 18,
+      "avg_loss": 0.11523766287912925,
+      "steps": 270
+    },
+    {
+      "epoch": 19,
+      "avg_loss": 0.14605515158424776,
+      "steps": 285
+    },
+    {
+      "epoch": 20,
+      "avg_loss": 0.13266342223311464,
+      "steps": 300
+    }
+  ],
+  "final_adapter": "models/era_lora/renaissance/final",
+  "honest_note": "This is a short but real PEFT UNet LoRA run (noise-prediction MSE), not a fake/stub checkpoint. Quality is limited by steps/images; Colab GPU recommended for fuller epochs."
+}

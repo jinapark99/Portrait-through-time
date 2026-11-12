@@ -5,10 +5,10 @@ Per-era PEFT UNet adapters for SD1.5 (`r=4`), trained from
 
 | Era | Slug | Images | Status |
 |-----|------|-------:|--------|
-| Modern/Impressionist | `modern_impressionist` | 40 | Trained (MPS short-run) |
-| Baroque | `baroque` | 20 | Pending Colab — see `docs/era-lora-colab.md` |
-| Romantic | `romantic` | 20 | Pending Colab |
-| Renaissance | `renaissance` | 15 | Optional |
+| Modern/Impressionist | `modern_impressionist` | 40 | Trained (MPS, 80 steps — earlier short run) |
+| Renaissance | `renaissance` | 15 | Trained (MPS, 300 steps) |
+| Baroque | `baroque` | 20 | Trained (MPS, 300 steps) |
+| Romantic | `romantic` | 20 | Trained (MPS, 300 steps) |
 | Rococo | `rococo` | 8 | Skipped (too few) |
 | Medieval/Gothic | `medieval_gothic` | 1 | Skipped |
 
